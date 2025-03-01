@@ -1,8 +1,8 @@
 package com.example.backend.controller;
 
-import com.example.backend.config.JwtUtil;
 import com.example.backend.model.User;
 import com.example.backend.repository.UserRepository;
+import com.example.backend.service.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,14 +15,14 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:5173")
 public class AuthController {
 
     @Autowired
     private UserRepository userRepository;
 
     @Autowired
-    private JwtUtil jwtUtil;
+    private JwtService jwtService;
 
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
@@ -34,16 +34,13 @@ public class AuthController {
                 return ResponseEntity.badRequest().body(Map.of("error", "Username already exists"));
             }
 
-
             user.setPassword(encoder.encode(user.getPassword()));
             User savedUser = userRepository.save(user);
 
-            String token = jwtUtil.generateToken(savedUser.getUsername());
-            System.out.println("Generated token: " + token);
+            String token = jwtService.generateToken(savedUser.getUsername());
 
             Map<String, Object> response = new HashMap<>();
             response.put("token", token);
-
 
             Map<String, Object> userData = new HashMap<>();
             userData.put("id", savedUser.getId());
@@ -58,7 +55,6 @@ public class AuthController {
                     .body(Map.of("error", "Registration failed: " + e.getMessage()));
         }
     }
-
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody Map<String, String> loginData) {
         try {
@@ -76,7 +72,7 @@ public class AuthController {
 
             User user = userOptional.get();
 
-            String token = jwtUtil.generateToken(user.getUsername());
+            String token = jwtService.generateToken(user.getUsername());
 
             Map<String, Object> response = new HashMap<>();
             response.put("token", token);
@@ -106,7 +102,7 @@ public class AuthController {
 
             String username;
             try {
-                username = jwtUtil.extractUsername(token);
+                username = jwtService.extractUsername(token);
             } catch (Exception e) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid token"));
             }
@@ -127,6 +123,6 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Error fetching profile: " + e.getMessage()));
-        }
-    }
+        }}
+
 }

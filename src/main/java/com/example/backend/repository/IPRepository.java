@@ -9,11 +9,5 @@ import java.util.List;
 @Repository
 public interface IPRepository extends JpaRepository<IntellectualProperty, String> {
 
-    /**
-     * Find all intellectual properties owned by a specific user
-     *
-     * @param owner The username of the owner
-     * @return List of intellectual properties
-     */
     List<IntellectualProperty> findByOwner(String owner);
 }

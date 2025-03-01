@@ -55,11 +55,11 @@ public class IPServiceImpl implements IPService {
     }
 
     @Override
-    public IPDetailsDTO transferOwnership(String id, String newOwner, String transactionHash) {
+    public IPDetailsDTO transferOwnership(String id, String newOwnerAddress, String transactionHash) {
         IntellectualProperty ip = ipRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Intellectual Property not found with id: " + id));
 
-        ip.setOwner(newOwner);
+        ip.setOwner(newOwnerAddress);
         ip.setStatus("TRANSFERRED");
         ip.setTransactionHash(transactionHash);
         ip.setUpdatedAt(LocalDateTime.now());
@@ -68,9 +68,7 @@ public class IPServiceImpl implements IPService {
         return convertToDTO(updatedIP);
     }
 
-    /**
-     * Helper method to convert entity to DTO
-     */
+
     private IPDetailsDTO convertToDTO(IntellectualProperty ip) {
         IPDetailsDTO dto = new IPDetailsDTO();
         dto.setId(ip.getId());
