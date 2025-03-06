@@ -3,7 +3,8 @@ package com.example.backend.dto;
 public class IPRegistrationRequestDTO {
     private String name;
     private String description;
-    private String owner;
+    private String ownerUsername;  // Username of the owner
+    private String ownerAddress;   // Blockchain address of the owner
     private String fileUrl;
     private String fileType;
     private String fileName;
@@ -26,12 +27,20 @@ public class IPRegistrationRequestDTO {
         this.description = description;
     }
 
-    public String getOwner() {
-        return owner;
+    public String getOwnerUsername() {
+        return ownerUsername;
     }
 
-    public void setOwner(String owner) {
-        this.owner = owner;
+    public void setOwnerUsername(String ownerUsername) {
+        this.ownerUsername = ownerUsername;
+    }
+
+    public String getOwnerAddress() {
+        return ownerAddress;
+    }
+
+    public void setOwnerAddress(String ownerAddress) {
+        this.ownerAddress = ownerAddress;
     }
 
     public String getFileUrl() {

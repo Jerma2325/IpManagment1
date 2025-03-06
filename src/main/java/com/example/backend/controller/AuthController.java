@@ -29,9 +29,24 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody User user) {
         try {
+            // Validate eth address format
+            if (user.getEthAddress() == null || !user.getEthAddress().matches("^0x[a-fA-F0-9]{40}$")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid Ethereum address format"));
+            }
+
             Optional<User> userOptional = userRepository.findByUsername(user.getUsername());
             if (userOptional.isPresent()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Username already exists"));
+            }
+
+            Optional<User> emailOptional = userRepository.findByEmail(user.getEmail());
+            if (emailOptional.isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Email already exists"));
+            }
+
+            Optional<User> ethAddressOptional = userRepository.findByEthAddress(user.getEthAddress());
+            if (ethAddressOptional.isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Ethereum address already registered"));
             }
 
             user.setPassword(encoder.encode(user.getPassword()));
@@ -46,6 +61,7 @@ public class AuthController {
             userData.put("id", savedUser.getId());
             userData.put("username", savedUser.getUsername());
             userData.put("email", savedUser.getEmail());
+            userData.put("ethAddress", savedUser.getEthAddress());
 
             response.put("user", userData);
 
@@ -55,6 +71,7 @@ public class AuthController {
                     .body(Map.of("error", "Registration failed: " + e.getMessage()));
         }
     }
+
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody Map<String, String> loginData) {
         try {
@@ -81,6 +98,7 @@ public class AuthController {
             userData.put("id", user.getId());
             userData.put("username", user.getUsername());
             userData.put("email", user.getEmail());
+            userData.put("ethAddress", user.getEthAddress());
 
             response.put("user", userData);
 
@@ -98,7 +116,7 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid or missing authorization token"));
             }
 
-            String token = authHeader.substring(7); // Remove "Bearer " prefix
+            String token = authHeader.substring(7); // remove "bearer"
 
             String username;
             try {
@@ -118,11 +136,12 @@ public class AuthController {
             userData.put("id", user.getId());
             userData.put("username", user.getUsername());
             userData.put("email", user.getEmail());
+            userData.put("ethAddress", user.getEthAddress());
 
             return ResponseEntity.ok(userData);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Error fetching profile: " + e.getMessage()));
-        }}
-
+        }
+    }
 }

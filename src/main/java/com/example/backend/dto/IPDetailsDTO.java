@@ -6,7 +6,9 @@ public class IPDetailsDTO {
     private String id;
     private String name;
     private String description;
-    private String owner;
+    private String ownerUsername;
+    private String ownerAddress;
+    private String blockchainHash;
     private String fileUrl;
     private String fileType;
     private String fileName;
@@ -40,12 +42,28 @@ public class IPDetailsDTO {
         this.description = description;
     }
 
-    public String getOwner() {
-        return owner;
+    public String getOwnerUsername() {
+        return ownerUsername;
     }
 
-    public void setOwner(String owner) {
-        this.owner = owner;
+    public void setOwnerUsername(String ownerUsername) {
+        this.ownerUsername = ownerUsername;
+    }
+
+    public String getOwnerAddress() {
+        return ownerAddress;
+    }
+
+    public void setOwnerAddress(String ownerAddress) {
+        this.ownerAddress = ownerAddress;
+    }
+
+    public String getBlockchainHash() {
+        return blockchainHash;
+    }
+
+    public void setBlockchainHash(String blockchainHash) {
+        this.blockchainHash = blockchainHash;
     }
 
     public String getFileUrl() {

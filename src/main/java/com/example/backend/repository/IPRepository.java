@@ -9,5 +9,7 @@ import java.util.List;
 @Repository
 public interface IPRepository extends JpaRepository<IntellectualProperty, String> {
 
-    List<IntellectualProperty> findByOwner(String owner);
+    List<IntellectualProperty> findByOwnerUsername(String ownerUsername);
+
+    List<IntellectualProperty> findByOwnerAddress(String ownerAddress);
 }

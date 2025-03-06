@@ -1,24 +1,35 @@
 package com.example.backend.service;
 
 import com.example.backend.contracts.SimpleStorage;
+import com.example.backend.model.User;
+import com.example.backend.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.web3j.crypto.Credentials;
+import org.web3j.crypto.Hash;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.tx.gas.DefaultGasProvider;
 import org.web3j.utils.Numeric;
 
-import java.util.Collections;
-import java.util.List;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 @Service
 public class BlockchainService {
 
-    private final SimpleStorage contract;
     private final Web3j web3j;
+    private final String contractAddress;
+    private final Credentials adminCredentials;
+    private final ContractGasProvider gasProvider;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private WalletService walletService;
 
     public BlockchainService(
             @Value("${blockchain.rpc.url}") String rpcUrl,
@@ -27,47 +38,52 @@ public class BlockchainService {
     ) {
         try {
             this.web3j = Web3j.build(new HttpService(rpcUrl));
+            this.contractAddress = contractAddress;
+            this.adminCredentials = Credentials.create(privateKey);
+            this.gasProvider = new DefaultGasProvider();
 
-            Credentials credentials = Credentials.create(privateKey);
-            ContractGasProvider gasProvider = new DefaultGasProvider();
-
-            this.contract = SimpleStorage.load(contractAddress, web3j, credentials, gasProvider);
-            System.out.println("Using account: " + credentials.getAddress());
+            System.out.println("BlockchainService initialized with admin account: " + adminCredentials.getAddress());
         } catch (Exception e) {
             System.err.println("Error initializing blockchain service: " + e.getMessage());
             throw new RuntimeException("Failed to initialize blockchain service", e);
         }
     }
-    public String registerIP(String name, String fileName, String owner) {
+
+    public String registerIP(String name, String fileName, String userAddress) {
         try {
-            var transactionReceipt = contract.registerIP(name).send();
+            SimpleStorage contract = SimpleStorage.load(
+                    contractAddress,
+                    web3j,
+                    adminCredentials,
+                    gasProvider
+            );
 
-            System.out.println("Transaction Receipt: " + transactionReceipt.toString());
-
-            List<SimpleStorage.IPRegisteredEventResponse> events = contract.getIPRegisteredEvents(transactionReceipt);
-
-            if (events.isEmpty()) {
-                System.out.println("No events found in the transaction receipt.");
-                return transactionReceipt.getTransactionHash();
-            }
-
-            String hash = Numeric.toHexString(events.get(0).hash);
-            return hash;
+            var transactionReceipt = contract.registerIP(name, userAddress).send();
+            return transactionReceipt.getTransactionHash();
         } catch (Exception e) {
             throw new RuntimeException("Error registering IP on blockchain: " + e.getMessage(), e);
         }
     }
 
 
+
+
+
     public String transferIP(String ipId, String newOwnerAddress) {
         try {
-            byte[] hashBytes;
+            SimpleStorage contract = SimpleStorage.load(
+                    contractAddress,
+                    web3j,
+                    adminCredentials,
+                    gasProvider
+            );
 
+            byte[] hashBytes;
             if (ipId.startsWith("0x")) {
                 hashBytes = Numeric.hexStringToByteArray(ipId);
             } else {
-
-                throw new IllegalArgumentException("IP ID must be a valid hex hash");
+                byte[] originalBytes = ipId.getBytes(StandardCharsets.UTF_8);
+                hashBytes = Hash.sha3(originalBytes);
             }
 
             var transactionReceipt = contract.transferOwnership(hashBytes, newOwnerAddress).send();
@@ -78,8 +94,16 @@ public class BlockchainService {
     }
 
 
+
     public String getIPDetails(String hash) {
         try {
+            SimpleStorage contract = SimpleStorage.load(
+                    contractAddress,
+                    web3j,
+                    adminCredentials,
+                    gasProvider
+            );
+
             byte[] hashBytes = Numeric.hexStringToByteArray(hash);
             var details = contract.getIPDetails(hashBytes).send();
             return String.format(
@@ -89,5 +113,9 @@ public class BlockchainService {
         } catch (Exception e) {
             throw new RuntimeException("Error fetching IP details: " + e.getMessage(), e);
         }
+    }
+
+    public String getTransactionSenderAddress() {
+        return adminCredentials.getAddress();
     }
 }

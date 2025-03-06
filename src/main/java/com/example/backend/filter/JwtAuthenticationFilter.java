@@ -1,4 +1,4 @@
-package com.example.backend.config;
+package com.example.backend.filter;
 
 import com.example.backend.service.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -3,10 +3,13 @@ package com.example.backend.controller;
 import com.example.backend.dto.IPDetailsDTO;
 import com.example.backend.dto.IPRegistrationRequestDTO;
 import com.example.backend.dto.TransferRequestDTO;
+import com.example.backend.model.User;
+import com.example.backend.repository.UserRepository;
 import com.example.backend.service.BlockchainService;
 import com.example.backend.service.FileStorageService;
 import com.example.backend.service.IPService;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
@@ -16,34 +19,56 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/intellectual-properties")
 public class IPController {
 
+    @Autowired
+    private FileStorageService fileStorageService;
 
-    private final FileStorageService fileStorageService;
-    private final BlockchainService blockchainService;
-    private final IPService ipService;
+    @Autowired
+    private BlockchainService blockchainService;
 
-    public IPController(FileStorageService fileStorageService,
-                        BlockchainService blockchainService,
-                        IPService ipService) {
-        this.fileStorageService = fileStorageService;
-        this.blockchainService = blockchainService;
-        this.ipService = ipService;
-    }
+    @Autowired
+    private IPService ipService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @GetMapping
     public ResponseEntity<List<IPDetailsDTO>> getAllIPs() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
+
+        if (authentication == null || !authentication.isAuthenticated() ||
+                "anonymousUser".equals(authentication.getPrincipal().toString())) {
+            System.out.println("Authentication failed: " + (authentication == null ? "null" : authentication.getPrincipal().toString()));
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         String currentUsername = authentication.getName();
-        List<IPDetailsDTO> userIPs = ipService.getAllIPsByOwner(currentUsername);
-        return ResponseEntity.ok(userIPs);
+        System.out.println("Authenticated user: " + currentUsername);
+
+        try {
+            Optional<User> userOpt = userRepository.findByUsername(currentUsername);
+            if (!userOpt.isPresent()) {
+                System.out.println("User not found in database: " + currentUsername);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            User user = userOpt.get();
+            System.out.println("Found user: " + user.getUsername() + " with eth address: " + user.getEthAddress());
+
+            List<IPDetailsDTO> userIPs = ipService.getAllIPsByOwner(currentUsername);
+            System.out.println("Found " + userIPs.size() + " IPs for user");
+
+            return ResponseEntity.ok(userIPs);
+        } catch (Exception e) {
+            System.err.println("Error getting IPs: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @GetMapping("/{id}")
@@ -55,10 +80,9 @@ public class IPController {
             }
 
             String currentUsername = authentication.getName();
-
             IPDetailsDTO ip = ipService.getIPById(id);
 
-            if (!ip.getOwner().equals(currentUsername)) {
+            if (!ip.getOwnerUsername().equals(currentUsername)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
 
@@ -67,7 +91,6 @@ public class IPController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
-
 
     @PostMapping
     public ResponseEntity<IPDetailsDTO> registerIP(
@@ -82,19 +105,32 @@ public class IPController {
 
             String currentUsername = authentication.getName();
 
+            Optional<User> userOpt = userRepository.findByUsername(currentUsername);
+            if (!userOpt.isPresent()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+            User user = userOpt.get();
+
+            if (user.getEthAddress() == null || user.getEthAddress().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
+
             String storedFileName = fileStorageService.storeFile(file);
 
             String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
-                    .path("/intellectual-properties/files/")
+                    .path("/api/intellectual-properties/files/")
                     .path(storedFileName)
                     .toUriString();
 
-            String transactionHash = blockchainService.registerIP(name, storedFileName, currentUsername);
+            String transactionHash = blockchainService.registerIP(name, storedFileName, user.getEthAddress());
 
             IPRegistrationRequestDTO registrationDTO = new IPRegistrationRequestDTO();
             registrationDTO.setName(name);
             registrationDTO.setDescription(description);
-            registrationDTO.setOwner(currentUsername);
+            registrationDTO.setOwnerUsername(currentUsername);
+            registrationDTO.setOwnerAddress(user.getEthAddress());
             registrationDTO.setFileUrl(fileDownloadUri);
             registrationDTO.setFileType(file.getContentType());
             registrationDTO.setFileName(storedFileName);
@@ -122,10 +158,9 @@ public class IPController {
             }
 
             String currentUsername = authentication.getName();
-
             IPDetailsDTO ip = ipService.getIPById(id);
 
-            if (!ip.getOwner().equals(currentUsername)) {
+            if (!ip.getOwnerUsername().equals(currentUsername)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
 
@@ -135,9 +170,16 @@ public class IPController {
                         .body(null);
             }
 
-            String transactionHash = blockchainService.transferIP(id, transferRequest.getNewOwnerAddress());
+            if (!transferRequest.getNewOwnerAddress().matches("^0x[a-fA-F0-9]{40}$")) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(null);
+            }
 
-            IPDetailsDTO updatedIP = ipService.transferOwnership(id, transferRequest.getNewOwnerAddress(), transactionHash);
+            String transactionHash = blockchainService.transferIP(id,
+                    transferRequest.getNewOwnerAddress());
+
+            IPDetailsDTO updatedIP = ipService.transferOwnership(id, transferRequest.getNewOwnerAddress(),
+                    transactionHash);
 
             return ResponseEntity.ok(updatedIP);
         } catch (Exception e) {

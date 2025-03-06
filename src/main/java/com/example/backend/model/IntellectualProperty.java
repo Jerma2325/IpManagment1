@@ -16,7 +16,11 @@ public class IntellectualProperty {
     @Lob
     private String description;
 
-    private String owner;
+    private String ownerUsername; // Username of the owner
+
+    private String ownerAddress; // Blockchain address of the owner
+
+    private String blockchainHash; // Hash used to identify this IP on the blockchain
 
     private String fileUrl;
 
@@ -58,12 +62,28 @@ public class IntellectualProperty {
         this.description = description;
     }
 
-    public String getOwner() {
-        return owner;
+    public String getOwnerUsername() {
+        return ownerUsername;
     }
 
-    public void setOwner(String owner) {
-        this.owner = owner;
+    public void setOwnerUsername(String ownerUsername) {
+        this.ownerUsername = ownerUsername;
+    }
+
+    public String getOwnerAddress() {
+        return ownerAddress;
+    }
+
+    public void setOwnerAddress(String ownerAddress) {
+        this.ownerAddress = ownerAddress;
+    }
+
+    public String getBlockchainHash() {
+        return blockchainHash;
+    }
+
+    public void setBlockchainHash(String blockchainHash) {
+        this.blockchainHash = blockchainHash;
     }
 
     public String getFileUrl() {

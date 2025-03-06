@@ -5,13 +5,12 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
@@ -30,8 +29,13 @@ public class JwtService {
     private SecretKey cachedSecretKey;
 
     public String extractUsername(String token) {
-        System.out.println(token);
-        return extractClaim(token, Claims::getSubject);
+        try {
+            String username = extractClaim(token, Claims::getSubject);
+            return username;
+        } catch (Exception e) {
+            System.err.println("Error extracting username: " + e.getMessage());
+            throw e;
+        }
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -40,12 +44,17 @@ public class JwtService {
     }
 
     public String generateToken(User user) {
-        return Jwts.builder()
-                .setSubject(user.getUsername())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
-                .signWith(SignatureAlgorithm.HS512, secretKey)
+        Map<String, Object> claims = new HashMap<>();
+        String token = Jwts.builder()
+                .claims(claims)
+                .subject(user.getUsername())
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .signWith(getSigningKey())
                 .compact();
+
+        System.out.println("Generated token for user: " + user.getUsername());
+        return token;
     }
 
     public String generateToken(String username) {
@@ -61,30 +70,55 @@ public class JwtService {
     }
 
     private String createToken(Map<String, Object> claims, String subject) {
+        Date issuedAt = new Date(System.currentTimeMillis());
+        Date expiration = new Date(System.currentTimeMillis() + jwtExpiration);
+
+        System.out.println("Creating token for subject: " + subject);
+        System.out.println("Token issuedAt: " + issuedAt);
+        System.out.println("Token expiration: " + expiration);
+
         String token = Jwts.builder()
                 .claims(claims)
                 .subject(subject)
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .issuedAt(issuedAt)
+                .expiration(expiration)
                 .signWith(getSigningKey())
                 .compact();
 
-        System.out.println("Generated token with subject: " + subject); // For debugging
         return token;
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         try {
             final String username = extractUsername(token);
-            return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+            boolean isValid = (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+
+            if (!isValid) {
+                if (!username.equals(userDetails.getUsername())) {
+                    System.err.println("Token username (" + username + ") doesn't match UserDetails username (" +
+                            userDetails.getUsername() + ")");
+                }
+                if (isTokenExpired(token)) {
+                    System.err.println("Token is expired");
+                }
+            }
+
+            return isValid;
         } catch (Exception e) {
-            System.err.println("Token validation error: " + e.getMessage());
+            System.err.println("Error validating token: " + e.getMessage());
             return false;
         }
     }
 
     private boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+        Date expiration = extractExpiration(token);
+        boolean isExpired = expiration.before(new Date());
+
+        if (isExpired) {
+            System.out.println("Token expired at: " + expiration + ", current time: " + new Date());
+        }
+
+        return isExpired;
     }
 
     private Date extractExpiration(String token) {
@@ -97,7 +131,6 @@ public class JwtService {
                     .verifyWith(getSigningKey())
                     .build();
 
-
             return parser.parseSignedClaims(token).getPayload();
         } catch (Exception e) {
             System.err.println("Error parsing JWT token: " + e.getMessage());
@@ -108,15 +141,12 @@ public class JwtService {
     private SecretKey getSigningKey() {
         if (cachedSecretKey == null) {
             byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
-            cachedSecretKey = Keys.hmacShaKeyFor(keyBytes);
+            cachedSecretKey = new SecretKeySpec(keyBytes, SignatureAlgorithm.HS512.getJcaName());
         }
         return cachedSecretKey;
     }
+
     public String getUsernameFromToken(String token) {
-        return Jwts.parser()
-                .setSigningKey(secretKey).build()
-                .parseSignedClaims(token)
-                .getBody()
-                .getSubject();
+        return extractUsername(token);
     }
 }
