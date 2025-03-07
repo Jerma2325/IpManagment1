@@ -16,16 +16,14 @@ public class User {
     private String email;
 
     @Column(nullable = false)
-    private String password; // hashed password
+    private String password;
 
     @Column(unique = true)
     private String ethAddress;
 
-    // Encrypted private key, should be secured properly
     @Column(length = 1000)
     private String encryptedPrivateKey;
 
-    // Salt for encryption
     @Column
     private String keySalt;
 

@@ -101,13 +101,13 @@ public class WalletService {
         }
     }
 
-    private String generateRandomSalt() {
+    public String generateRandomSalt() {
         byte[] salt = new byte[16];
         new SecureRandom().nextBytes(salt);
         return Base64.getEncoder().encodeToString(salt);
     }
 
-    private String encryptPrivateKey(String privateKey, String password, String salt) throws Exception {
+    public String encryptPrivateKey(String privateKey, String password, String salt) throws Exception {
         byte[] iv = new byte[16];
         new SecureRandom().nextBytes(iv);
         IvParameterSpec ivSpec = new IvParameterSpec(iv);

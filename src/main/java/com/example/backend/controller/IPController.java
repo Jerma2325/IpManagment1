@@ -159,7 +159,7 @@ public class IPController {
 
             String currentUsername = authentication.getName();
             IPDetailsDTO ip = ipService.getIPById(id);
-
+            System.out.println("Found IP: " + ip.getId() + " with eth address: " + ip.getOwnerAddress());
             if (!ip.getOwnerUsername().equals(currentUsername)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }

@@ -1,8 +1,10 @@
 package com.example.backend.controller;
 
+import com.example.backend.dto.RegisterRequestDTO;
 import com.example.backend.model.User;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.service.JwtService;
+import com.example.backend.service.WalletService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,33 +25,63 @@ public class AuthController {
 
     @Autowired
     private JwtService jwtService;
+    @Autowired
+    private WalletService walletService;
 
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody User user) {
+    public ResponseEntity<?> registerUser(@RequestBody RegisterRequestDTO registerRequest) {
         try {
             // Validate eth address format
-            if (user.getEthAddress() == null || !user.getEthAddress().matches("^0x[a-fA-F0-9]{40}$")) {
+            if (registerRequest.getEthAddress() == null || !registerRequest.getEthAddress().matches("^0x[a-fA-F0-9]{40}$")) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Invalid Ethereum address format"));
             }
 
-            Optional<User> userOptional = userRepository.findByUsername(user.getUsername());
+            // Validate private key if provided
+            if (registerRequest.getPrivateKey() != null &&
+                    !registerRequest.getPrivateKey().matches("^(0x)?[0-9a-fA-F]{64}$")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid private key format"));
+            }
+
+            Optional<User> userOptional = userRepository.findByUsername(registerRequest.getUsername());
             if (userOptional.isPresent()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Username already exists"));
             }
 
-            Optional<User> emailOptional = userRepository.findByEmail(user.getEmail());
+            Optional<User> emailOptional = userRepository.findByEmail(registerRequest.getEmail());
             if (emailOptional.isPresent()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Email already exists"));
             }
 
-            Optional<User> ethAddressOptional = userRepository.findByEthAddress(user.getEthAddress());
+            Optional<User> ethAddressOptional = userRepository.findByEthAddress(registerRequest.getEthAddress());
             if (ethAddressOptional.isPresent()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Ethereum address already registered"));
             }
 
-            user.setPassword(encoder.encode(user.getPassword()));
+            // Create new user
+            User user = new User();
+            user.setUsername(registerRequest.getUsername());
+            user.setEmail(registerRequest.getEmail());
+            user.setPassword(encoder.encode(registerRequest.getPassword()));
+            user.setEthAddress(registerRequest.getEthAddress());
+
+            // Store private key if provided
+            if (registerRequest.getPrivateKey() != null && !registerRequest.getPrivateKey().isEmpty()) {
+                // Generate salt for encryption
+                String salt = walletService.generateRandomSalt();
+
+                // Encrypt the private key with the user's password
+                String encryptedKey = walletService.encryptPrivateKey(
+                        registerRequest.getPrivateKey().replaceFirst("^0x", ""),
+                        registerRequest.getPassword(),
+                        salt
+                );
+
+                user.setEncryptedPrivateKey(encryptedKey);
+                user.setKeySalt(salt);
+            }
+
             User savedUser = userRepository.save(user);
 
             String token = jwtService.generateToken(savedUser.getUsername());
@@ -62,6 +94,7 @@ public class AuthController {
             userData.put("username", savedUser.getUsername());
             userData.put("email", savedUser.getEmail());
             userData.put("ethAddress", savedUser.getEthAddress());
+            userData.put("hasPrivateKey", savedUser.getEncryptedPrivateKey() != null);
 
             response.put("user", userData);
 

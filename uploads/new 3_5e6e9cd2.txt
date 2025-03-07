@@ -1,0 +1,38 @@
+Obsługa i wsparcie pracowników firmy w języku angielskim. Podstawowa diagnostyka i rozwiązywanie problemow z bankowymi aplikacjami. Aktywne korzystanie z narzędzi zdalnego dostępu typu remote desktop connection. Zarządzanie kontami użytkowników w systemie active directory. Praca w systemie ticketowym z użyciem platformy ServiceNow. Tworzenie ticketow i opracowywanie przychodzących. Współpraca z innymi zespołami drugiej i trzeciej linii wsparcia. Review i tworzenie artykułów pomocniczych. Praca w międzynarodowym zespole. 
+
+
+Podstawowa diagnostyka i rozwiązywanie problemów z bankowymi aplikacjami
+(Diagnoza i analiza problemów wymaga obserwacji symptomów, opisania ich przebiegu oraz interpretacji przyczyn)
+Tworzenie ticketów i opracowywanie przychodzących
+(Przy rejestrowaniu incydentów konieczne jest dokładne opisanie zgłoszonego problemu oraz przeprowadzenie wstępnej analizy)
+Review i tworzenie artykułów pomocniczych
+(Opracowywanie dokumentacji wsparcia wymaga analizy powtarzających się problemów oraz sformułowania opisu rozwiązań)
+
+Zarządzanie kontami użytkowników w systemie Active Directory
+(Procedury związane z przydzielaniem i modyfikacją dostępu są ściśle oparte na wewnętrznych regulacjach i politykach bezpieczeństwa)
+Praca w systemie ticketowym z użyciem platformy ServiceNow
+(Obsługa ticketów często wymaga stosowania się do ustalonych procedur i wewnętrznych standardów operacyjnych)
+Tworzenie ticketów i opracowywanie przychodzących
+(Rejestracja zgłoszeń odbywa się zgodnie z określonymi regulacjami oraz procedurami obowiązującymi w firmie)
+
+Obsługa i wsparcie pracowników firmy w języku angielskim
+(Bezpośrednia komunikacja z użytkownikami, wyjaśnianie problemów i udzielanie instrukcji wymaga efektywnego posługiwania się językiem)
+Praca w międzynarodowym zespole
+(Codzienna komunikacja i współpraca w wielokulturowym środowisku wymaga umiejętności przekazywania informacji oraz aktywnego słuchania)
+Współpraca z innymi zespołami drugiej i trzeciej linii wsparcia
+(Koordynacja działań oraz wymiana informacji między zespołami podkreślają wagę umiejętności komunikacyjnych)
+
+Współpraca z innymi zespołami drugiej i trzeciej linii wsparcia
+(Praca zespołowa przy rozwiązywaniu problemów i przekazywaniu wiedzy jest kluczowa dla efektywnego wsparcia użytkowników)
+Praca w międzynarodowym zespole
+(Współdziałanie w zróżnicowanym kulturowo środowisku wymaga umiejętności adaptacji i współpracy)
+Review i tworzenie artykułów pomocniczych
+(Opracowywanie dokumentacji wsparcia często odbywa się w ramach wspólnego projektu, gdzie istotna jest kooperacja i dzielenie się wiedzą)
+
+rafal.michalski@computacenter.com
+
+Rafał Michalski 
+
+Magdalena Rymarska
+
+Helpdesk 1st line analyst

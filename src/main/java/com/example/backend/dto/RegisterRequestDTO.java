@@ -5,6 +5,7 @@ public class RegisterRequestDTO {
     private String email;
     private String password;
     private String ethAddress;
+    private String privateKey;
 
     public String getUsername() {
         return username;
@@ -36,5 +37,13 @@ public class RegisterRequestDTO {
 
     public void setEthAddress(String ethAddress) {
         this.ethAddress = ethAddress;
+    }
+
+    public String getPrivateKey() {
+        return privateKey;
+    }
+
+    public void setPrivateKey(String privateKey) {
+        this.privateKey = privateKey;
     }
 }

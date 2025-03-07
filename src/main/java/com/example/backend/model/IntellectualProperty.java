@@ -16,11 +16,11 @@ public class IntellectualProperty {
     @Lob
     private String description;
 
-    private String ownerUsername; // Username of the owner
+    private String ownerUsername;
 
-    private String ownerAddress; // Blockchain address of the owner
+    private String ownerAddress;
 
-    private String blockchainHash; // Hash used to identify this IP on the blockchain
+    private String blockchainHash; // hash used to identify this IP on the blockchain
 
     private String fileUrl;
 

@@ -6,6 +6,7 @@ import com.example.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.Hash;
 import org.web3j.protocol.Web3j;
@@ -24,7 +25,7 @@ public class BlockchainService {
     private final String contractAddress;
     private final Credentials adminCredentials;
     private final ContractGasProvider gasProvider;
-
+    private  String userAddress;
     @Autowired
     private UserRepository userRepository;
 
@@ -35,6 +36,7 @@ public class BlockchainService {
             @Value("${blockchain.rpc.url}") String rpcUrl,
             @Value("${blockchain.contract.address}") String contractAddress,
             @Value("${blockchain.owner.privateKey}") String privateKey
+
     ) {
         try {
             this.web3j = Web3j.build(new HttpService(rpcUrl));
@@ -49,10 +51,11 @@ public class BlockchainService {
         }
     }
 
-    public String registerIP(String name, String fileName, String userAddress) {
+    public String registerIP(String name, String fileName, String address) {
+        userAddress = address;
         try {
             SimpleStorage contract = SimpleStorage.load(
-                    contractAddress,
+                    userAddress,
                     web3j,
                     adminCredentials,
                     gasProvider
@@ -72,7 +75,7 @@ public class BlockchainService {
     public String transferIP(String ipId, String newOwnerAddress) {
         try {
             SimpleStorage contract = SimpleStorage.load(
-                    contractAddress,
+                    userAddress,
                     web3j,
                     adminCredentials,
                     gasProvider
